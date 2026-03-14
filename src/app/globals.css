@@ -1,26 +1,53 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700&display=swap');
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --primary-indigo: #6366F1;
+  --primary-violet: #8B5CF6;
+  --accent-emerald: #10B981;
+  --bg-slate: #F1F5F9;
+  --board-dark: #0F0C29;
+  --board-light: #302B63;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  background-color: var(--bg-slate);
+  color: #1E293B;
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] text-white font-bold py-4 px-6 rounded-2xl hover:opacity-90 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .card-elevated {
+    @apply bg-white rounded-2xl shadow-xl border border-slate-100;
+  }
+
+  .input-styled {
+    @apply w-full p-4 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all outline-none;
+  }
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: white !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  .print-card {
+    box-shadow: none !important;
+    border: 2px solid #EEE !important;
+    margin: 0 !important;
+    padding: 40px !important;
+  }
 }
