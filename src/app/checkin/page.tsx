@@ -74,45 +74,16 @@ export default function CheckinPage() {
 
     setLoading(true);
     try {
-      // 1. Get count of tokens for department to determine token_number
-      const { count: totalTokens } = await supabase
-        .from('tokens')
-        .select('*', { count: 'exact', head: true })
-        .eq('department', department);
-
-      // 2. Get count of waiting tokens for department to determine position
-      const { count: waitingTokens } = await supabase
-        .from('tokens')
-        .select('*', { count: 'exact', head: true })
-        .eq('department', department)
-        .eq('status', 'waiting');
-
-      const tokenNumber = (totalTokens || 0) + 1;
-      const position = (waitingTokens || 0) + 1;
-
-      const { data, error } = await supabase
-        .from('tokens')
-        .insert([
-          {
-            name,
-            age: parseInt(age),
-            department,
-            token_number: tokenNumber,
-            position,
-            status: 'waiting'
-          }
-        ])
-        .select()
-        .single();
-
-      if (error) throw error;
-      router.push(`/token?id=${data.id}`);
+      const params = new URLSearchParams({
+        name,
+        age,
+        department
+      });
+      router.push(`/select-doctor?${params.toString()}`);
     } catch (error: any) {
-      console.error('Error getting token details:', error);
-      console.dir(error);
-      alert(`Failed to get token: ${error.message || 'Check your database connection and RLS policies.'}`);
+      console.error('Error navigating:', error);
     } finally {
-      setLoading(false);
+      // Let it stay loading until navigation completes
     }
   };
 
@@ -227,7 +198,7 @@ export default function CheckinPage() {
               disabled={loading}
               className="btn-primary w-full mt-4"
             >
-              {loading ? 'Processing...' : 'Get My Token'}
+              {loading ? 'Processing...' : 'Next'}
             </button>
           </form>
         </div>
