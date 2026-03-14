@@ -4,9 +4,9 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { DEPARTMENTS } from '@/lib/constants';
 
 export default function AdminPage() {
-  const [departments, setDepartments] = useState<string[]>([]);
   const [queueStates, setQueueStates] = useState<Record<string, { current: number, is_paused: boolean }>>({});
   const [waitingCounts, setWaitingCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState<Record<string, boolean>>({});
@@ -14,21 +14,18 @@ export default function AdminPage() {
   useEffect(() => {
     const fetchInitialData = async () => {
       // Fetch queue states
-      const { data: qData } = await supabase.from('queue_state').select('*').order('department');
-      const depts: string[] = [];
+      const { data: qData } = await supabase.from('queue_state').select('*');
       if (qData) {
         const states: Record<string, { current: number, is_paused: boolean }> = {};
         qData.forEach(row => {
           states[row.department] = { current: row.current_token, is_paused: row.is_paused };
-          depts.push(row.department);
         });
         setQueueStates(states);
-        setDepartments(depts);
       }
 
       // Fetch waiting counts
       const counts: Record<string, number> = {};
-      for (const dept of depts) {
+      for (const dept of DEPARTMENTS) {
         const { count } = await supabase
           .from('tokens')
           .select('*', { count: 'exact', head: true })
@@ -162,7 +159,7 @@ export default function AdminPage() {
 
       <div className="px-8 pb-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {departments.map((dept: string) => {
+          {DEPARTMENTS.map((dept: string) => {
             const state = queueStates[dept];
             const currentToken = state?.current || 0;
             const isPaused = state?.is_paused || false;

@@ -6,14 +6,14 @@ import { supabase } from '@/lib/supabase';
 import { Mic, MicOff, ChevronDown } from 'lucide-react';
 import Link from 'next/link';
 import PatientHeader from '@/components/PatientHeader';
+import { DEPARTMENTS, DEPARTMENTS_ML } from '@/lib/constants';
 
 export default function CheckinPage() {
   const router = useRouter();
   const [name, setName] = useState('');
   const [age, setAge] = useState('');
   
-  const [departments, setDepartments] = useState<string[]>([]);
-  const [department, setDepartment] = useState('');
+  const [department, setDepartment] = useState(DEPARTMENTS[0]);
   const [isListening, setIsListening] = useState(false);
   const [lang, setLang] = useState('en-IN');
   const [loading, setLoading] = useState(false);
@@ -30,17 +30,7 @@ export default function CheckinPage() {
       setLang('en-IN');
     }
 
-    const fetchDepartments = async () => {
-      const { data } = await supabase.from('queue_state').select('department').order('department');
-      if (data && data.length > 0) {
-        const parsedDepts = data.map((d: any) => d.department);
-        setDepartments(parsedDepts);
-        setDepartment(parsedDepts[0]);
-      }
-      setInitialFetchDone(true);
-    };
-
-    fetchDepartments();
+    setInitialFetchDone(true);
 
     if (typeof window !== 'undefined' && ('webkitSpeechRecognition' in window || 'speechRecognition' in window)) {
       const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).speechRecognition;
@@ -168,9 +158,9 @@ export default function CheckinPage() {
                   onChange={(e) => setDepartment(e.target.value)}
                   className="w-full border border-[#D0E8F0] rounded-md px-4 py-3 text-[16px] text-[#1B3A5C] focus:outline-none focus:border-[#2B9BB8] transition-colors appearance-none bg-white"
                 >
-                  {departments.map((dept: string) => (
+                  {DEPARTMENTS.map((dept: string) => (
                     <option key={dept} value={dept}>
-                      {dept}
+                      {lang === 'ml-IN' ? DEPARTMENTS_ML[dept] : dept}
                     </option>
                   ))}
                 </select>

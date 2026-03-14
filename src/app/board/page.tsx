@@ -3,23 +3,20 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
+import { DEPARTMENTS } from '@/lib/constants';
 
 export default function BoardPage() {
-  const [departments, setDepartments] = useState<string[]>([]);
   const [queueStates, setQueueStates] = useState<Record<string, number>>({});
 
   useEffect(() => {
     const fetchInitialData = async () => {
-      const { data, error } = await supabase.from('queue_state').select('*').order('department');
+      const { data, error } = await supabase.from('queue_state').select('*');
       if (!error && data) {
         const states: Record<string, number> = {};
-        const depts: string[] = [];
         data.forEach(row => {
           states[row.department] = row.current_token;
-          depts.push(row.department);
         });
         setQueueStates(states);
-        setDepartments(depts);
       }
     };
 
@@ -55,7 +52,7 @@ export default function BoardPage() {
 
       <div className="flex-grow flex items-center justify-center">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:flex xl:flex-wrap xl:justify-center gap-6 max-w-[1400px] w-full mx-auto">
-          {departments.map((dept) => {
+          {DEPARTMENTS.map((dept) => {
             const currentToken = queueStates[dept] || 0;
 
             return (

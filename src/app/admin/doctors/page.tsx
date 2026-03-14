@@ -5,9 +5,9 @@ import { supabase } from '@/lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, UserPlus, Edit2, Play, Pause, Trash2, X, Plus } from 'lucide-react';
 import Link from 'next/link';
+import { DEPARTMENTS } from '@/lib/constants';
 
 export default function DoctorsPage() {
-  const [departments, setDepartments] = useState<string[]>([]);
   const [doctors, setDoctors] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -32,33 +32,15 @@ export default function DoctorsPage() {
         fetchInitialData();
       })
       .subscribe();
-      
-    const queueSub = supabase
-      .channel('admin-queue-dept')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'queue_state' }, (payload: any) => {
-        setDepartments(prev => {
-          if (!prev.includes(payload.new.department)) {
-            return [...prev, payload.new.department].sort();
-          }
-          return prev;
-        });
-      })
-      .subscribe();
 
     return () => {
       supabase.removeChannel(doctorSub);
-      supabase.removeChannel(queueSub);
     };
   }, []);
 
   const fetchInitialData = async () => {
-    // Fetch departments
-    const { data: qData } = await supabase.from('queue_state').select('department').order('department');
-    if (qData && qData.length > 0) {
-      setDepartments(qData.map(d => d.department));
-      if (!formData.department) {
-        setFormData(prev => ({ ...prev, department: qData[0].department }));
-      }
+    if (!formData.department) {
+      setFormData(prev => ({ ...prev, department: DEPARTMENTS[0] }));
     }
 
     // Fetch doctors
@@ -75,7 +57,7 @@ export default function DoctorsPage() {
   };
 
   const handleOpenAddModal = () => {
-    setFormData({ name: '', department: departments[0] || '' });
+    setFormData({ name: '', department: DEPARTMENTS[0] || '' });
     setIsAddModalOpen(true);
   };
 
@@ -430,7 +412,7 @@ export default function DoctorsPage() {
                       className="w-full p-4 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all outline-none bg-white font-medium text-slate-700"
                       disabled={isSubmitting}
                     >
-                      {departments.map((dept) => (
+                      {DEPARTMENTS.map((dept) => (
                         <option key={dept} value={dept}>{dept}</option>
                       ))}
                     </select>
