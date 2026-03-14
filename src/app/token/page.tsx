@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, Suspense, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { Printer, Clock, ArrowRight } from 'lucide-react';
@@ -12,6 +12,11 @@ function TokenContent() {
   const [token, setToken] = useState<any>(null);
   const [livePosition, setLivePosition] = useState<number>(0);
   const [loading, setLoading] = useState(true);
+  
+  const randomMinutesRef = useRef<number | null>(null);
+  if (randomMinutesRef.current === null) {
+    randomMinutesRef.current = Math.floor(Math.random() * 4) + 7;
+  }
 
   // 1. Fetch initial token data and listen for updates to THIS specific token
   useEffect(() => {
@@ -92,7 +97,7 @@ function TokenContent() {
     window.print();
   };
 
-  const estimatedWait = livePosition * 7;
+  const estimatedWait = Math.max(0, token.token_number - 1) * (randomMinutesRef.current || 7);
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center p-4 bg-[#F1F5F9]">
@@ -146,7 +151,9 @@ function TokenContent() {
           </div>
           <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
             <p className="text-xs text-slate-400 font-medium mb-1">Estimated Wait</p>
-            <p className="text-lg font-bold text-slate-700">~{estimatedWait} mins</p>
+            <p className={`text-lg font-bold ${estimatedWait === 0 ? 'text-emerald-500' : 'text-slate-700'}`}>
+              {estimatedWait === 0 ? 'See immediately' : `~${estimatedWait} mins`}
+            </p>
           </div>
         </div>
 
