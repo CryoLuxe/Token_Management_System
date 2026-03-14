@@ -4,8 +4,8 @@ import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
+import PatientHeader from '@/components/PatientHeader';
 
 function SelectDoctorContent() {
   const router = useRouter();
@@ -30,7 +30,6 @@ function SelectDoctorContent() {
     }
 
     const fetchDoctorsData = async () => {
-      // 1. Fetch doctors for this department
       const { data: docsData, error: docsError } = await supabase
         .from('doctors')
         .select('*')
@@ -44,7 +43,6 @@ function SelectDoctorContent() {
       
       setDoctors(docsData);
 
-      // 2. Compute live wait counts for active doctors
       const activeDocs = docsData.filter(d => d.is_active);
       const counts: Record<string, number> = {};
       
@@ -60,18 +58,13 @@ function SelectDoctorContent() {
       
       setWaitCounts(counts);
 
-      // 3. Auto-Assignment Logic
       if (activeDocs.length > 0) {
-        // Find minimum wait count
         let minWait = Infinity;
         for (const doc of activeDocs) {
           if (counts[doc.id] < minWait) minWait = counts[doc.id];
         }
 
-        // Collect ties
         const tiedDocs = activeDocs.filter(doc => counts[doc.id] === minWait);
-        
-        // Randomly pick one of the tied docs
         const chosenDoc = tiedDocs[Math.floor(Math.random() * tiedDocs.length)];
         
         setRecommendedDocId(chosenDoc.id);
@@ -91,13 +84,11 @@ function SelectDoctorContent() {
     try {
       const selectedDoc = doctors.find(d => d.id === selectedDocId);
       
-      // Get all tokens for this department to calculate raw token boundary
       const { count: totalTokens } = await supabase
         .from('tokens')
         .select('*', { count: 'exact', head: true })
         .eq('department', department);
 
-      // Calculate strictly doctor-scoped position
       const { count: doctorWaitCount } = await supabase
         .from('tokens')
         .select('*', { count: 'exact', head: true })
@@ -134,57 +125,51 @@ function SelectDoctorContent() {
   };
 
   if (loading) {
-    return <main className="min-h-screen flex items-center justify-center p-4 bg-[#F1F5F9]">Finding available doctors...</main>;
+    return <main className="min-h-screen bg-[#EBF4F7] flex items-center justify-center p-4">Finding available doctors...</main>;
   }
 
   const activeDoctorsCount = doctors.filter(d => d.is_active).length;
 
   return (
-    <main className="min-h-screen bg-[#F1F5F9] pb-24">
-      {/* Header */}
-      <div className="bg-white border-b border-slate-200 sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-6 py-6">
-          <Link href="/checkin" className="inline-flex items-center gap-2 text-indigo-600 font-medium hover:text-indigo-800 transition-colors mb-4 text-sm">
-            <ArrowLeft size={16} /> Back
-          </Link>
-          <h1 className="text-3xl font-bold text-slate-900 mb-1">Choose Your Doctor</h1>
-          <p className="text-slate-500">We've suggested the best available doctor for you</p>
-        </div>
-      </div>
+    <main className="min-h-screen bg-[#EBF4F7] font-sans pb-24">
+      <PatientHeader />
 
-      <div className="max-w-4xl mx-auto px-6 mt-8">
+      <div className="max-w-4xl mx-auto px-6 mt-6">
+        <Link href="/checkin" className="inline-block text-[#2B9BB8] text-sm font-medium hover:text-[#1E7A94] transition-colors mb-6">
+          ← Back
+        </Link>
+        
+        <h1 className="text-3xl sm:text-4xl font-bold text-[#1B3A5C] mb-8 text-center">
+          Select a Doctor
+        </h1>
+
         {/* Patient Summary Bar */}
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100 flex flex-wrap gap-x-8 gap-y-2 mb-8 items-center text-sm font-medium text-slate-600">
-          <div><span className="text-slate-400 font-light">Patient:</span> {name}</div>
-          <div className="w-px h-4 bg-slate-200 hidden sm:block" />
-          <div><span className="text-slate-400 font-light">Age:</span> {age}</div>
-          <div className="w-px h-4 bg-slate-200 hidden sm:block" />
-          <div className="flex items-center gap-2">
-            <span className="text-slate-400 font-light">Department:</span>
-            <span className="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-md font-bold text-xs uppercase tracking-wide">
-              {department}
-            </span>
+        <div className="bg-white rounded-lg p-6 border border-[#D0E8F0] flex flex-wrap gap-x-12 gap-y-4 mb-8">
+          <div>
+            <div className="uppercase tracking-[0.05em] text-[12px] text-[#5A7A8A] mb-1">Patient Name</div>
+            <div className="font-bold text-[#1B3A5C] text-lg">{name}</div>
+          </div>
+          <div>
+            <div className="uppercase tracking-[0.05em] text-[12px] text-[#5A7A8A] mb-1">Age</div>
+            <div className="font-bold text-[#1B3A5C] text-lg">{age}</div>
+          </div>
+          <div>
+            <div className="uppercase tracking-[0.05em] text-[12px] text-[#5A7A8A] mb-1">Department</div>
+            <div className="font-bold text-[#1B3A5C] text-lg uppercase">{department}</div>
           </div>
         </div>
 
         {/* Doctor Grid or Offline State */}
         {activeDoctorsCount === 0 ? (
-          <motion.div 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-red-50 border border-red-100 rounded-3xl p-12 text-center shadow-sm max-w-lg mx-auto mt-12"
-          >
-            <div className="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
-              <AlertTriangle size={32} />
-            </div>
-            <h2 className="text-2xl font-bold text-red-900 mb-3">No Doctors Available</h2>
-            <p className="text-red-700 font-medium leading-relaxed">
+          <div className="bg-[#FEF2F2] border border-[#FCA5A5] rounded-lg p-8 text-center max-w-2xl mx-auto mt-8">
+            <h2 className="text-xl font-bold text-[#DC2626] mb-2">No Doctors Available</h2>
+            <p className="text-[#991B1B]">
               All doctors in {department} are currently unavailable.<br/>
               Please visit the reception desk or try again later.
             </p>
-          </motion.div>
+          </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <AnimatePresence>
               {doctors.map((doc) => {
                 const isSelected = selectedDocId === doc.id;
@@ -193,12 +178,12 @@ function SelectDoctorContent() {
 
                 if (!doc.is_active) {
                   return (
-                    <div key={doc.id} className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 opacity-45 relative pointer-events-none">
-                      <div className="absolute top-4 right-4 bg-red-100 text-red-600 text-xs font-bold px-3 py-1 rounded-full border border-red-200">
-                        Temporarily Unavailable
+                    <div key={doc.id} className="bg-white rounded-lg p-5 border border-[#D0E8F0] opacity-40 relative pointer-events-none">
+                      <div className="absolute top-4 right-4 bg-[#FEF2F2] text-[#DC2626] text-[11px] font-bold px-2 py-1 roundeduppercase tracking-[0.05em]">
+                        UNAVAILABLE
                       </div>
-                      <h3 className="text-xl font-bold text-slate-500 mb-3 pr-24">{doc.name}</h3>
-                      <div className="bg-slate-100 text-slate-500 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider inline-block">
+                      <h3 className="text-[18px] font-bold text-[#1B3A5C] mb-3 pr-24">{doc.name}</h3>
+                      <div className="text-[#2B9BB8] border border-[#2B9BB8] rounded px-2 py-0.5 text-[12px] uppercase inline-block mb-3">
                         {doc.department}
                       </div>
                     </div>
@@ -206,41 +191,37 @@ function SelectDoctorContent() {
                 }
 
                 return (
-                  <motion.button
+                  <button
                     key={doc.id}
-                    layout
-                    whileHover={{ y: -2 }}
                     onClick={() => setSelectedDocId(doc.id)}
-                    className={`text-left rounded-2xl p-6 relative transition-all duration-200 ${
+                    className={`text-left rounded-lg p-5 relative transition-all duration-200 block w-full ${
                       isSelected 
-                        ? 'bg-indigo-50/50 border-2 border-indigo-500 shadow-md shadow-indigo-100/50' 
-                        : 'bg-white border-2 border-transparent shadow-sm hover:shadow-md hover:border-indigo-100'
+                        ? 'bg-[#F0F9FC] border-[2px] border-[#2B9BB8]' 
+                        : 'bg-white border border-[#D0E8F0] hover:border-[#2B9BB8]'
                     }`}
                   >
                     {isRecommended && (
-                      <div className="absolute top-4 right-4 bg-emerald-100 text-emerald-700 text-xs font-bold px-3 py-1 rounded-full border border-emerald-200 flex items-center gap-1">
-                        Recommended ✓
+                      <div className="absolute top-4 right-4 bg-[#2B9BB8] text-white text-[11px] font-bold px-2 py-1 rounded uppercase tracking-[0.05em]">
+                        RECOMMENDED
                       </div>
                     )}
                     
-                    <h3 className={`text-2xl font-bold mb-4 pr-32 ${isSelected ? 'text-indigo-900' : 'text-slate-800'}`}>
+                    <h3 className="text-[18px] font-bold text-[#1B3A5C] mb-3 pr-28">
                       {doc.name}
                     </h3>
                     
-                    <div className="flex flex-col gap-4 mt-auto">
-                      <div className="bg-gradient-to-r from-indigo-500 w-fit to-violet-500 text-white px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm">
-                        {doc.department}
-                      </div>
-                      
-                      <div className="mt-2 font-medium">
-                        {waitCount === 0 ? (
-                          <span className="text-emerald-600">No queue — see immediately</span>
-                        ) : (
-                          <span className="text-amber-600">{waitCount} {waitCount === 1 ? 'patient' : 'patients'} waiting</span>
-                        )}
-                      </div>
+                    <div className="text-[#2B9BB8] border border-[#2B9BB8] rounded px-2 py-0.5 text-[12px] uppercase inline-block mb-4">
+                      {doc.department}
                     </div>
-                  </motion.button>
+                    
+                    <div className="mt-auto">
+                      {waitCount === 0 ? (
+                        <div className="text-[#16A34A] text-[14px] font-medium">No queue — see immediately</div>
+                      ) : (
+                        <div className="text-[#5A7A8A] text-[14px]">Tokens Booked: <span className="font-bold">{waitCount}</span></div>
+                      )}
+                    </div>
+                  </button>
                 );
               })}
             </AnimatePresence>
@@ -249,11 +230,11 @@ function SelectDoctorContent() {
 
         {/* Confirm Button */}
         {activeDoctorsCount > 0 && (
-          <div className="mt-12 max-w-sm mx-auto">
+          <div className="mt-8 max-w-sm mx-auto">
             <button
               onClick={handleConfirm}
               disabled={!selectedDocId || isSubmitting}
-              className="w-full bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] text-white font-bold py-4 px-6 rounded-2xl hover:opacity-90 transition-all active:scale-[0.98] disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed shadow-lg shadow-indigo-200"
+              className="w-full bg-[#2B9BB8] hover:bg-[#1E7A94] disabled:bg-[#A0AEC0] text-white font-bold text-[16px] uppercase py-4 px-6 rounded-lg transition-colors"
             >
               {isSubmitting ? 'Processing...' : 'Confirm & Get Token'}
             </button>
@@ -266,7 +247,7 @@ function SelectDoctorContent() {
 
 export default function SelectDoctorPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#F1F5F9] flex items-center justify-center p-4">Loading...</div>}>
+    <Suspense fallback={<div className="min-h-screen bg-[#EBF4F7] flex items-center justify-center p-4">Loading...</div>}>
       <SelectDoctorContent />
     </Suspense>
   );

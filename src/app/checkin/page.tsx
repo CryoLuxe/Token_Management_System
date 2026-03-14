@@ -3,8 +3,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { Mic, MicOff, Languages, ChevronDown } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Mic, MicOff, ChevronDown } from 'lucide-react';
+import Link from 'next/link';
+import PatientHeader from '@/components/PatientHeader';
 
 export default function CheckinPage() {
   const router = useRouter();
@@ -14,7 +15,6 @@ export default function CheckinPage() {
   const [departments, setDepartments] = useState<string[]>([]);
   const [department, setDepartment] = useState('');
   const [isListening, setIsListening] = useState(false);
-  const [showLangSelector, setShowLangSelector] = useState(false);
   const [lang, setLang] = useState('en-IN');
   const [loading, setLoading] = useState(false);
   const [initialFetchDone, setInitialFetchDone] = useState(false);
@@ -22,6 +22,14 @@ export default function CheckinPage() {
   const recognitionRef = useRef<any>(null);
 
   useEffect(() => {
+    // Read selected language
+    const storedLang = localStorage.getItem('mediqueue_lang');
+    if (storedLang === 'ml') {
+      setLang('ml-IN');
+    } else {
+      setLang('en-IN');
+    }
+
     const fetchDepartments = async () => {
       const { data } = await supabase.from('queue_state').select('department').order('department');
       if (data && data.length > 0) {
@@ -64,7 +72,6 @@ export default function CheckinPage() {
       recognitionRef.current.lang = lang;
       recognitionRef.current.start();
       setIsListening(true);
-      setShowLangSelector(false);
     }
   };
 
@@ -83,86 +90,62 @@ export default function CheckinPage() {
     } catch (error: any) {
       console.error('Error navigating:', error);
     } finally {
-      // Let it stay loading until navigation completes
+      // Stay loading until nav completes
     }
   };
 
   if (!initialFetchDone) {
-    return <main className="min-h-screen flex items-center justify-center p-4">Loading application...</main>;
+    return <main className="min-h-screen bg-[#EBF4F7] flex items-center justify-center p-4">Loading application...</main>;
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
-            MediQueue
-          </h1>
-          <p className="text-slate-500 font-light mt-1">Register & Get Your Token</p>
-        </div>
+    <main className="min-h-screen bg-[#EBF4F7] flex flex-col font-sans">
+      <PatientHeader />
+      
+      <div className="flex-grow flex items-center justify-center p-6">
+        <div className="w-full max-w-[480px] bg-white border border-[#D0E8F0] rounded-lg p-8 relative">
+          
+          <Link href="/" className="absolute top-8 left-8 text-[#2B9BB8] text-sm font-medium hover:text-[#1E7A94] transition-colors">
+            ← Back
+          </Link>
 
-        <div className="card-elevated p-8">
+          <div className="mt-8 mb-8">
+            <h2 className="text-[22px] font-bold text-[#1B3A5C]">
+              Patient Registration
+            </h2>
+            <div className="w-12 h-[3px] bg-[#2B9BB8] mt-2"></div>
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <label className="text-sm font-light text-slate-500">Name</label>
+              <label className="block uppercase tracking-[0.05em] text-[12px] font-bold text-[#5A7A8A]">
+                Name
+              </label>
               <div className="relative">
                 <input
                   type="text"
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="input-styled pr-12"
+                  className="w-full border border-[#D0E8F0] rounded-md px-4 py-3 text-[16px] text-[#1B3A5C] focus:outline-none focus:border-[#2B9BB8] transition-colors pr-12"
                   placeholder="Enter your name"
                 />
-                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={() => setShowLangSelector(!showLangSelector)}
-                    className="p-2 text-slate-400 hover:text-indigo-500 transition-colors"
-                  >
-                    <Languages size={20} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={toggleListening}
-                    className={`p-2 rounded-lg transition-all ${
-                      isListening ? 'bg-indigo-100 text-indigo-600 animate-pulse' : 'text-slate-400 hover:text-indigo-500'
-                    }`}
-                  >
-                    {isListening ? <MicOff size={20} /> : <Mic size={20} />}
-                  </button>
-                </div>
-
-                <AnimatePresence>
-                  {showLangSelector && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 10 }}
-                      className="absolute right-0 top-full mt-2 bg-white rounded-xl shadow-lg border border-slate-100 p-2 z-10 w-32"
-                    >
-                      <button
-                        type="button"
-                        onClick={() => { setLang('en-IN'); setShowLangSelector(false); }}
-                        className={`w-full text-left px-3 py-2 rounded-lg text-sm ${lang === 'en-IN' ? 'bg-indigo-50 text-indigo-600 font-medium' : 'text-slate-600'}`}
-                      >
-                        English
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => { setLang('ml-IN'); setShowLangSelector(false); }}
-                        className={`w-full text-left px-3 py-2 rounded-lg text-sm ${lang === 'ml-IN' ? 'bg-indigo-50 text-indigo-600 font-medium' : 'text-slate-600'}`}
-                      >
-                        Malayalam
-                      </button>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                <button
+                  type="button"
+                  onClick={toggleListening}
+                  className={`absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-md transition-all ${
+                    isListening ? 'bg-[#EBF4F7] text-[#2B9BB8] animate-pulse' : 'text-[#5A7A8A] hover:text-[#2B9BB8]'
+                  }`}
+                >
+                  {isListening ? <MicOff size={20} /> : <Mic size={20} />}
+                </button>
               </div>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-light text-slate-500">Age</label>
+              <label className="block uppercase tracking-[0.05em] text-[12px] font-bold text-[#5A7A8A]">
+                Age
+              </label>
               <input
                 type="number"
                 required
@@ -170,18 +153,20 @@ export default function CheckinPage() {
                 max="120"
                 value={age}
                 onChange={(e) => setAge(e.target.value)}
-                className="input-styled"
+                className="w-full border border-[#D0E8F0] rounded-md px-4 py-3 text-[16px] text-[#1B3A5C] focus:outline-none focus:border-[#2B9BB8] transition-colors"
                 placeholder="How old are you?"
               />
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-light text-slate-500">Department</label>
+              <label className="block uppercase tracking-[0.05em] text-[12px] font-bold text-[#5A7A8A]">
+                Department
+              </label>
               <div className="relative">
                 <select
                   value={department}
                   onChange={(e) => setDepartment(e.target.value)}
-                  className="input-styled appearance-none"
+                  className="w-full border border-[#D0E8F0] rounded-md px-4 py-3 text-[16px] text-[#1B3A5C] focus:outline-none focus:border-[#2B9BB8] transition-colors appearance-none bg-white"
                 >
                   {departments.map((dept: string) => (
                     <option key={dept} value={dept}>
@@ -189,14 +174,14 @@ export default function CheckinPage() {
                     </option>
                   ))}
                 </select>
-                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={20} />
+                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-[#5A7A8A] pointer-events-none" size={20} />
               </div>
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="btn-primary w-full mt-4"
+              className="w-full bg-[#2B9BB8] hover:bg-[#1E7A94] disabled:bg-[#A0AEC0] text-white font-bold text-[16px] uppercase py-4 px-6 rounded-lg transition-colors mt-6"
             >
               {loading ? 'Processing...' : 'Next'}
             </button>
